@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import Image from 'next/image';
 
-// Bước 1: Tạo một interface để mô tả chính xác "hình dạng" của một talent trong kết quả tìm kiếm
 interface Talent {
     id: string;
     full_name: string | null;
@@ -13,14 +12,12 @@ interface Talent {
     height: number | null;
 }
 
-interface SearchPageProps {
-    searchParams: {
-        city?: string;
-        min_height?: string
-    };
-}
-
-export default async function SearchPage({ searchParams }: SearchPageProps) {
+// Thay vì tạo một interface riêng, chúng ta sẽ định nghĩa kiểu trực tiếp trong hàm
+export default async function SearchPage({
+    searchParams
+}: {
+    searchParams: { city?: string; min_height?: string }
+}) {
     const supabase = createClient();
     const { city, min_height } = searchParams;
 
@@ -42,12 +39,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         <div className="p-8">
             <h1 className="text-3xl font-bold mb-6">Tìm kiếm Talent</h1>
 
-            {/* Bước 2: Kiểm tra nếu không có kết quả thì hiển thị thông báo */}
             {(!talents || talents.length === 0) ? (
                 <p>Không tìm thấy talent nào phù hợp.</p>
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                    {/* Bước 3: Áp dụng kiểu "Talent" vào tham số của hàm map */}
                     {talents.map((talent: Talent) => (
                         <Link href={`/talent/${talent.id}`} key={talent.id} className="block group">
                             <div className="border rounded-lg overflow-hidden shadow-md group-hover:shadow-xl transition-shadow">
