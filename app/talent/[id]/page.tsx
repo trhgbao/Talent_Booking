@@ -4,19 +4,18 @@ import { createClient } from '@/lib/supabase/server';
 import Image from 'next/image';
 import BookingTrigger from '@/components/BookingTrigger';
 
+// Định nghĩa kiểu cho các props theo cách chuẩn nhất
+type Props = {
+    params: { id: string };
+};
+
 interface PortfolioItem {
     id: number;
     file_url: string;
     title: string | null;
 }
 
-interface TalentDetailPageProps {
-    params: {
-        id: string;
-    };
-}
-
-export default async function TalentDetailPage({ params }: TalentDetailPageProps) {
+export default async function TalentDetailPage({ params }: Props) {
     const supabase = createClient();
     const talentId = params.id;
 

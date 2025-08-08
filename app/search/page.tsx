@@ -4,6 +4,12 @@ import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import Image from 'next/image';
 
+// Định nghĩa kiểu cho các props theo cách chuẩn nhất
+// `searchParams` là một đối tượng có thể chứa nhiều key khác nhau
+type Props = {
+    searchParams: { [key: string]: string | string[] | undefined };
+};
+
 interface Talent {
     id: string;
     full_name: string | null;
@@ -12,14 +18,12 @@ interface Talent {
     height: number | null;
 }
 
-// Thay vì tạo một interface riêng, chúng ta sẽ định nghĩa kiểu trực tiếp trong hàm
-export default async function SearchPage({
-    searchParams
-}: {
-    searchParams: { city?: string; min_height?: string }
-}) {
+export default async function SearchPage({ searchParams }: Props) {
     const supabase = createClient();
-    const { city, min_height } = searchParams;
+
+    // Lấy các giá trị searchParams một cách an toàn
+    const city = searchParams.city as string | undefined;
+    const min_height = searchParams.min_height as string | undefined;
 
     let query = supabase
         .from('profiles')
