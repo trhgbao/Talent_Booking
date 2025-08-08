@@ -1,4 +1,5 @@
-﻿import { createClient } from '@/lib/supabase/server';
+﻿export const runtime = 'nodejs';
+import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import Image from 'next/image';
 

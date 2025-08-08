@@ -1,4 +1,5 @@
 ﻿// app/dashboard/bookings/page.tsx
+export const runtime = 'nodejs';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import BookingList from '@/components/BookingList';

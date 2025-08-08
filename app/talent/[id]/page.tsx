@@ -1,5 +1,5 @@
 ﻿// app/talent/[id]/page.tsx
-
+export const runtime = 'nodejs';
 import { createClient } from '@/lib/supabase/server';
 import Image from 'next/image';
 import BookingTrigger from '@/components/BookingTrigger';
