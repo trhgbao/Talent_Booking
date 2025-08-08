@@ -1,55 +1,88 @@
-﻿// app/search/page.tsx
+﻿// app/talent/[id]/page.tsx
+
 import { createClient } from '@/lib/supabase/server';
-import Link from 'next/link';
+import Image from 'next/image';
+import BookingTrigger from '@/components/BookingTrigger';
 
-// Bước 1: Định nghĩa kiểu dữ liệu cho object talent
-type TalentProfile = {
-    id: string;
-    full_name: string | null;
-    avatar_url: string | null;
-    city: string | null;
-    height: number | null;
-};
+// Bước 1: Tạo một interface để định nghĩa cấu trúc cho một portfolio item
+interface PortfolioItem {
+    id: number;
+    file_url: string;
+    title: string | null; // title có thể có hoặc không, nên là string hoặc null
+}
 
-export default async function SearchPage({ searchParams }: {
-    searchParams: { city?: string; min_height?: string };
-}) {
+interface TalentDetailPageProps {
+    params: {
+        id: string;
+    };
+}
+
+export default async function TalentDetailPage({ params }: TalentDetailPageProps) {
     const supabase = createClient();
-    const { city, min_height } = searchParams;
+    const talentId = params.id;
 
-    let query = supabase
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { data: talentProfile } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url, city, height')
-        .eq('role', 'talent');
+        .select('*')
+        .eq('id', talentId)
+        .single();
 
-    if (city) {
-        query = query.eq('city', city);
-    }
-    if (min_height) {
-        query = query.gte('height', Number(min_height));
-    }
+    // Khi lấy dữ liệu, chúng ta có thể báo cho Supabase biết kiểu dữ liệu mong đợi
+    const { data: portfolioItems } = await supabase
+        .from('portfolios')
+        .select('id, file_url, title')
+        .eq('talent_id', talentId);
 
-    // TypeScript giờ sẽ hiểu `talents` là một mảng TalentProfile[] hoặc null
-    const { data: talents} = await query;
+    if (!talentProfile) {
+        return <div className="p-8">Không tìm thấy talent.</div>;
+    }
 
     return (
-        <div>
-            <h1>Tìm kiếm Talent</h1>
-            {/* Ở đây bạn sẽ có các ô filter để người dùng chọn */}
-            {/* ... */}
-            <div className="talent-grid">
-                {/* Bước 2: Áp dụng type vào tham số của hàm map */}
-                {talents?.map((talent: TalentProfile) => (
-                    <Link href={`/talent/${talent.id}`} key={talent.id}>
-                        <div>
-                            {/* Giờ đây, khi bạn gõ `talent.`, VS Code sẽ gợi ý các thuộc tính! */}
-                            <img src={talent.avatar_url || ''} alt={talent.full_name || 'Talent'} width={150} />
-                            <p>{talent.full_name}</p>
-                            <p>{talent.city} - {talent.height} cm</p>
-                        </div>
-                    </Link>
-                ))}
+        <div className="p-8 max-w-4xl mx-auto">
+            <div className="flex items-center gap-6 mb-8">
+                <Image
+                    src={talentProfile.avatar_url || '/default-avatar.png'}
+                    alt={talentProfile.full_name || 'Talent Avatar'}
+                    width={150}
+                    height={150}
+                    className="rounded-full object-cover border-4 border-white shadow-lg"
+                />
+                <div>
+                    <h1 className="text-4xl font-bold">{talentProfile.full_name}</h1>
+                    <p className="text-lg text-gray-600">Chiều cao: {talentProfile.height} cm | Thành phố: {talentProfile.city}</p>
+                </div>
             </div>
+
+            <div className="mb-8">
+                <h2 className="text-2xl font-semibold mb-2">Giới thiệu</h2>
+                <p className="text-gray-700">{talentProfile.bio}</p>
+            </div>
+
+            <div className="mb-8">
+                <h2 className="text-2xl font-semibold mb-4">Portfolio</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {/* Bước 2: Áp dụng kiểu đã định nghĩa vào tham số `item` */}
+                    {portfolioItems?.map((item: PortfolioItem) => (
+                        <div key={item.id} className="rounded-lg overflow-hidden">
+                            <Image
+                                src={item.file_url}
+                                alt={item.title || 'Portfolio item'}
+                                width={300}
+                                height={300}
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <BookingTrigger
+                talentId={talentProfile.id}
+                talentName={talentProfile.full_name}
+                currentUser={user}
+            />
         </div>
     );
 }
