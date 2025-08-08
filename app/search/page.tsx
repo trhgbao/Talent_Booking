@@ -30,7 +30,7 @@ export default async function SearchPage({ searchParams }: {
     }
 
     // TypeScript giờ sẽ hiểu `talents` là một mảng TalentProfile[] hoặc null
-    const { data: talents, error } = await query;
+    const { data: talents} = await query;
 
     return (
         <div>

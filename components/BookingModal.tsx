@@ -53,8 +53,13 @@ export default function BookingModal({ isOpen, onClose, talentId, talentName, cu
             onClose(); // Đóng modal sau khi gửi thành công
             setNotes(''); // Reset form
             setBookingDate('');
-        } catch (err: any) {
-            setError('Đã xảy ra lỗi: ' + err.message);
+        } catch (err) {
+            // Kiểm tra và ép kiểu `err` thành một đối tượng Error
+            if (err instanceof Error) {
+                setError('Đã xảy ra lỗi: ' + err.message);
+            } else {
+                setError('Đã xảy ra một lỗi không xác định.');
+            }
         } finally {
             setIsLoading(false);
         }
