@@ -12,7 +12,7 @@ export default function AuthPage() {
             <Auth
                 supabaseClient={supabase}
                 appearance={{ theme: ThemeSupa }}
-                providers={['google', 'github']} // Tùy ch?n: cho phép ??ng nh?p b?ng MXH
+                providers={['google', 'github']} 
                 redirectTo={`${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`}
             />
         </div>
