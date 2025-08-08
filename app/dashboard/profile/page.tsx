@@ -2,24 +2,25 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import ProfileForm from '@/components/ProfileForm';
-import React from 'react'
+import React from 'react';
 
 export default async function ProfilePage() {
     const supabase = createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-        redirect('/auth'); 
+        redirect('/auth');
     }
 
     const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single(); 
+        .single();
 
-    if (error && error.code !== 'PGRST116') 
+    if (error && error.code !== 'PGRST116') {
         console.error('Error fetching profile:', error);
+    }
 
     return (
         <div>
