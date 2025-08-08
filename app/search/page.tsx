@@ -1,88 +1,74 @@
-﻿// app/talent/[id]/page.tsx
+﻿// app/search/page.tsx
 
 import { createClient } from '@/lib/supabase/server';
+import Link from 'next/link';
 import Image from 'next/image';
-import BookingTrigger from '@/components/BookingTrigger';
 
-// Bước 1: Tạo một interface để định nghĩa cấu trúc cho một portfolio item
-interface PortfolioItem {
-    id: number;
-    file_url: string;
-    title: string | null; // title có thể có hoặc không, nên là string hoặc null
+// Bước 1: Tạo một interface để mô tả chính xác "hình dạng" của một talent trong kết quả tìm kiếm
+interface Talent {
+    id: string;
+    full_name: string | null;
+    avatar_url: string | null;
+    city: string | null;
+    height: number | null;
 }
 
-interface TalentDetailPageProps {
-    params: {
-        id: string;
+interface SearchPageProps {
+    searchParams: {
+        city?: string;
+        min_height?: string
     };
 }
 
-export default async function TalentDetailPage({ params }: TalentDetailPageProps) {
+export default async function SearchPage({ searchParams }: SearchPageProps) {
     const supabase = createClient();
-    const talentId = params.id;
+    const { city, min_height } = searchParams;
 
-    const { data: { user } } = await supabase.auth.getUser();
-
-    const { data: talentProfile } = await supabase
+    let query = supabase
         .from('profiles')
-        .select('*')
-        .eq('id', talentId)
-        .single();
+        .select('id, full_name, avatar_url, city, height')
+        .eq('role', 'talent');
 
-    // Khi lấy dữ liệu, chúng ta có thể báo cho Supabase biết kiểu dữ liệu mong đợi
-    const { data: portfolioItems } = await supabase
-        .from('portfolios')
-        .select('id, file_url, title')
-        .eq('talent_id', talentId);
-
-    if (!talentProfile) {
-        return <div className="p-8">Không tìm thấy talent.</div>;
+    if (city) {
+        query = query.eq('city', city);
+    }
+    if (min_height) {
+        query = query.gte('height', Number(min_height));
     }
 
+    const { data: talents } = await query;
+
     return (
-        <div className="p-8 max-w-4xl mx-auto">
-            <div className="flex items-center gap-6 mb-8">
-                <Image
-                    src={talentProfile.avatar_url || '/default-avatar.png'}
-                    alt={talentProfile.full_name || 'Talent Avatar'}
-                    width={150}
-                    height={150}
-                    className="rounded-full object-cover border-4 border-white shadow-lg"
-                />
-                <div>
-                    <h1 className="text-4xl font-bold">{talentProfile.full_name}</h1>
-                    <p className="text-lg text-gray-600">Chiều cao: {talentProfile.height} cm | Thành phố: {talentProfile.city}</p>
-                </div>
-            </div>
+        <div className="p-8">
+            <h1 className="text-3xl font-bold mb-6">Tìm kiếm Talent</h1>
 
-            <div className="mb-8">
-                <h2 className="text-2xl font-semibold mb-2">Giới thiệu</h2>
-                <p className="text-gray-700">{talentProfile.bio}</p>
-            </div>
-
-            <div className="mb-8">
-                <h2 className="text-2xl font-semibold mb-4">Portfolio</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {/* Bước 2: Áp dụng kiểu đã định nghĩa vào tham số `item` */}
-                    {portfolioItems?.map((item: PortfolioItem) => (
-                        <div key={item.id} className="rounded-lg overflow-hidden">
-                            <Image
-                                src={item.file_url}
-                                alt={item.title || 'Portfolio item'}
-                                width={300}
-                                height={300}
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
+            {/* Bước 2: Kiểm tra nếu không có kết quả thì hiển thị thông báo */}
+            {(!talents || talents.length === 0) ? (
+                <p>Không tìm thấy talent nào phù hợp.</p>
+            ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                    {/* Bước 3: Áp dụng kiểu "Talent" vào tham số của hàm map */}
+                    {talents.map((talent: Talent) => (
+                        <Link href={`/talent/${talent.id}`} key={talent.id} className="block group">
+                            <div className="border rounded-lg overflow-hidden shadow-md group-hover:shadow-xl transition-shadow">
+                                <Image
+                                    src={talent.avatar_url || '/default-avatar.png'}
+                                    alt={talent.full_name || 'Talent Avatar'}
+                                    width={200}
+                                    height={200}
+                                    className="w-full h-48 object-cover"
+                                />
+                                <div className="p-3">
+                                    <p className="font-bold truncate">{talent.full_name || 'Chưa có tên'}</p>
+                                    <p className="text-sm text-gray-600">
+                                        {talent.city || 'N/A'} - {talent.height ? `${talent.height} cm` : 'N/A'}
+                                    </p>
+                                </div>
+                            </div>
+                        </Link>
                     ))}
                 </div>
-            </div>
-
-            <BookingTrigger
-                talentId={talentProfile.id}
-                talentName={talentProfile.full_name}
-                currentUser={user}
-            />
+            )}
         </div>
     );
 }
