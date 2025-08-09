@@ -1,37 +1,70 @@
-﻿// app/dashboard/bookings/page.tsx
-export const runtime = 'nodejs';
-import { createClient } from '@/lib/supabase/server';
+﻿// /app/dashboard/bookings/page.tsx
+'use client' // Chuyển thành client component để có thể dùng hook
+
+import { createClient } from '@/lib/supabase/client'; // Dùng client helper
 import { redirect } from 'next/navigation';
 import BookingList from '@/components/BookingList';
+import { useState, useEffect } from 'react';
+import { User } from '@supabase/supabase-js';
 
-export default async function BookingsDashboardPage() {
-    const supabase = createClient();
+// Định nghĩa lại kiểu dữ liệu cho rõ ràng
+interface ClientProfile {
+  full_name: string | null;
+  avatar_url: string | null;
+}
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+interface Booking {
+  id: string; 
+  created_at: string;
+  start_date: string;
+  notes: string | null;
+  status: 'pending' | 'confirmed' | 'cancelled';
+  client: ClientProfile | null;
+}
+
+export default function BookingsDashboardPage() {
+  const supabase = createClient();
+  const [user, setUser] = useState<User | null>(null);
+  const [bookings, setBookings] = useState<Booking[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) {
         redirect('/auth');
-    }
+        return;
+      }
+      setUser(currentUser);
 
-    // Query mạnh mẽ của Supabase:
-    // Lấy tất cả bookings của talent này, ĐỒNG THỜI lấy luôn thông tin của người gửi (client)
-    const { data: bookings, error } = await supabase
+      // Câu query đã được sửa lại cho đúng
+      const { data, error } = await supabase
         .from('bookings')
         .select(`
-      *,
-      client:profiles!client_id (full_name, avatar_url)
-    `)
-        .eq('talent_id', user.id)
-        .order('created_at', { ascending: false }); // Sắp xếp job mới nhất lên đầu
+          id, created_at, start_date, notes, status,
+          client:client_id (full_name, avatar_url)
+        `)
+        .eq('talent_id', currentUser.id)
+        .order('created_at', { ascending: false });
 
-    if (error) {
+      if (error) {
         console.error("Lỗi lấy danh sách booking:", error);
-        return <div>Có lỗi xảy ra khi tải dữ liệu.</div>
-    }
+      } else {
+        setBookings(data as any); // Dùng `as any` ở đây để đơn giản hóa, vì BookingList đã có type guard
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
 
-    return (
-        <div className="p-8">
-            <h1 className="text-3xl font-bold mb-6">Quản lý Booking</h1>
-            <BookingList initialBookings={bookings} />
-        </div>
-    );
+  if (loading) {
+    return <div className="p-8">Đang tải danh sách booking...</div>;
+  }
+
+  return (
+      <div className="p-8">
+          <h1 className="text-3xl font-bold mb-6">Quản lý Booking</h1>
+          <BookingList initialBookings={bookings} />
+      </div>
+  );
 }
