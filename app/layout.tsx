@@ -2,8 +2,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/Header"; // Import
-import Footer from "@/components/Footer"; // Import
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { Toaster } from 'react-hot-toast'; // Import Toaster một lần duy nhất
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,9 +21,15 @@ export default function RootLayout({
     return (
         <html lang="vi">
             <body className={inter.className}>
-                <Header /> {/* Thêm Header */}
+                {/* Thêm Header, Toaster, và Footer vào đúng vị trí */}
+                <Header />
+
+                {/* Đặt Toaster ngay trong body để nó hiển thị trên cùng */}
+                <Toaster position="top-center" />
+
                 <main>{children}</main>
-                <Footer /> {/* Thêm Footer */}
+
+                <Footer />
             </body>
         </html>
     );

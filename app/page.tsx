@@ -20,7 +20,7 @@ export default async function HomePage() {
                 {/* Ảnh nền */}
                 <div className="absolute inset-0 bg-black opacity-50 z-10"></div>
                 {/* Bạn có thể thay ảnh này bằng một ảnh đẹp hơn */}
-                <img src="https://images.unsplash.com/photo-1522244331360-863a35415317" alt="Background" className="absolute inset-0 w-full h-full object-cover" />
+                <img src="https://plus.unsplash.com/premium_photo-1691223714387-a74006933ffb?q=80&w=1223&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Background" className="absolute inset-0 w-full h-full object-cover" />
 
                 {/* Nội dung */}
                 <div className="relative z-20 p-4">
@@ -28,7 +28,7 @@ export default async function HomePage() {
                         Kết Nối Tài Năng, Kiến Tạo Thành Công
                     </h1>
                     <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto">
-                        Nền tảng booking Người mẫu, Diễn viên, MC hàng đầu Việt Nam.
+                        Nền tảng booking Người mẫu, Diễn viên, MC.
                     </p>
                     {/* Thanh tìm kiếm (chỉ là giao diện, chưa có chức năng) */}
                     <div className="mt-8 max-w-xl mx-auto">

@@ -1,23 +1,15 @@
-﻿// components/ProfileForm.tsx
+﻿// /components/ProfileForm.tsx
 'use client';
 
-import { useState } from 'react'; // Đã xóa useEffect không sử dụng
+import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
+import { Profile } from '@/types'; // <-- Bước 2: Import từ file chung
 
-// Bước 1: Tạo một kiểu (type) để mô tả cấu trúc của một profile
-// (Bạn có thể thêm các trường khác nếu có trong CSDL)
-type Profile = {
-    id: string;
-    full_name: string | null;
-    height: number | null;
-    // ... thêm các trường khác như weight, city, bio...
-};
-
-// Bước 2: Tạo một interface để định nghĩa các props cho component
+// Định nghĩa props cho component
 interface ProfileFormProps {
-    user: User;           // user là một đối tượng User từ Supabase
-    profile: Profile | null; // profile có thể là đối tượng Profile hoặc null
+    user: User;
+    profile: Profile | null;
 }
 
 // Bước 3: Áp dụng interface vào component
