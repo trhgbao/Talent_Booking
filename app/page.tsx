@@ -4,17 +4,31 @@ import { createClient } from '@/lib/supabase/server';
 import TalentCard from '@/components/TalentCard';
 import Link from 'next/link';
 
+// Bước 1: Định nghĩa kiểu cho talent để truyền vào TalentCard
+// Kiểu này cần phải khớp với props của TalentCard.tsx
+interface TalentForCard {
+    id: string;
+    avatar_url: string | null;
+    full_name: string | null;
+    city: string | null;
+    // Thêm category nếu TalentCard của bạn có dùng
+    category?: string;
+}
+
 export default async function HomePage() {
     const supabase = createClient();
 
+    // Bước 2: Báo cho Supabase biết kiểu dữ liệu mong đợi
     const { data: talents } = await supabase
         .from('profiles')
         .select('id, full_name, avatar_url, city')
         .eq('role', 'talent')
-        .limit(8);
+        .limit(8)
+        .returns<TalentForCard[]>(); // <-- Thêm dòng này
 
     return (
         <main>
+            {/* ... (Phần JSX của Hero Section giữ nguyên) ... */}
             <section className="relative h-[60vh] flex items-center justify-center text-center text-white bg-gray-700">
                 <div className="absolute inset-0 bg-black opacity-50 z-10"></div>
                 <img src="https://images.unsplash.com/photo-1522244331360-863a35415317" alt="Background" className="absolute inset-0 w-full h-full object-cover" />
@@ -38,8 +52,8 @@ export default async function HomePage() {
                         <p className="text-center">Chưa có talent nào để hiển thị.</p>
                     ) : (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                            {/* Bây giờ không cần @ts-ignore nữa */}
                             {talents.map((talent) => (
-                                // @ts-ignore // Tạm thời bỏ qua lỗi type ở đây để tập trung vào chức năng
                                 <TalentCard key={talent.id} talent={talent} />
                             ))}
                         </div>
