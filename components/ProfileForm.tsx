@@ -4,71 +4,69 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { Profile } from '@/types'; // <-- Bước 2: Import từ file chung
+import toast from 'react-hot-toast';
+import { Database } from 'types/types_db'; // Import kiểu Database
 
-// Định nghĩa props cho component
+// Trích xuất kiểu Profile từ types_db.ts để đảm bảo nhất quán
+type Profile = Database['public']['Tables']['profiles']['Row'];
+
 interface ProfileFormProps {
     user: User;
-    profile: Profile | null;
+    profile: Profile | null; // ProfileForm sẽ nhận kiểu Profile đã được chuẩn hóa
 }
 
-// Bước 3: Áp dụng interface vào component
 export default function ProfileForm({ user, profile }: ProfileFormProps) {
     const supabase = createClient();
     const [fullName, setFullName] = useState(profile?.full_name || '');
     const [height, setHeight] = useState(profile?.height || '');
+    const [city, setCity] = useState(profile?.city || ''); // Thêm state cho city
+    const [bio, setBio] = useState(profile?.bio || '');     // Thêm state cho bio
     const [loading, setLoading] = useState(false);
 
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        try {
-            const { error } = await supabase.from('profiles').upsert({
-                id: user.id, // upsert cần id để biết nên update hay insert
+
+        const { error } = await supabase
+            .from('profiles')
+            .update({
                 full_name: fullName,
                 height: height,
-                updated_at: new Date().toISOString(), // Thêm trường này nếu có trong CSDL
-            }).select();
+                city: city,
+                bio: bio,
+                // Không có 'weight' ở đây
+            })
+            .eq('id', user.id);
 
-            if (error) throw error;
-            alert('Cập nhật hồ sơ thành công!');
-        } catch (error) {
-            if (error instanceof Error) {
-                alert('Lỗi: ' + error.message);
-            }
-        } finally {
-            setLoading(false);
+        setLoading(false);
+
+        if (error) {
+            toast.error(error.message);
+        } else {
+            toast.success('Cập nhật hồ sơ thành công!');
         }
     };
 
     return (
         <form onSubmit={handleUpdateProfile} className="space-y-4">
             <div>
-                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                    Họ và tên
-                </label>
-                <input
-                    id="fullName"
-                    type="text"
-                    value={fullName || ''}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
-                />
+                <label htmlFor="fullName">Họ và tên</label>
+                <input id="fullName" type="text" value={fullName || ''} onChange={(e) => setFullName(e.target.value)} className="w-full mt-1 p-2 border rounded-md" />
             </div>
             <div>
-                <label htmlFor="height" className="block text-sm font-medium text-gray-700">
-                    Chiều cao (cm)
-                </label>
-                <input
-                    id="height"
-                    type="number"
-                    value={height || ''}
-                    onChange={(e) => setHeight(Number(e.target.value))}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
-                />
+                <label htmlFor="height">Chiều cao (cm)</label>
+                <input id="height" type="number" value={height || ''} onChange={(e) => setHeight(Number(e.target.value))} className="w-full mt-1 p-2 border rounded-md" />
             </div>
-            {/* Thêm các input khác cho weight, city... ở đây nếu cần */}
-            <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:bg-gray-400">
+            <div>
+                <label htmlFor="city">Thành phố</label>
+                <input id="city" type="text" value={city || ''} onChange={(e) => setCity(e.target.value)} className="w-full mt-1 p-2 border rounded-md" />
+            </div>
+            <div>
+                <label htmlFor="bio">Giới thiệu</label>
+                <textarea id="bio" value={bio || ''} onChange={(e) => setBio(e.target.value)} rows={4} className="w-full mt-1 p-2 border rounded-md" />
+            </div>
+
+            <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 disabled:bg-gray-400">
                 {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
             </button>
         </form>
