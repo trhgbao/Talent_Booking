@@ -1,12 +1,11 @@
-// /components/PortfolioManager.tsx
+// /components/PortfolioManager.tsx - PHIÊN BẢN GỠ LỖI HOÀN CHỈNH
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react'; // Thêm useCallback
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
-import imageCompression from 'browser-image-compression';
-import { useRouter } from 'next/navigation'; // Thêm import này
+import { useRouter } from 'next/navigation';
 
 interface PortfolioItem {
     id: number;
@@ -15,14 +14,13 @@ interface PortfolioItem {
 
 export default function PortfolioManager({ userId }: { userId: string }) {
     const supabase = createClient();
-    const router = useRouter(); // Thêm dòng này
+    const router = useRouter();
     const [items, setItems] = useState<PortfolioItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [files, setFiles] = useState<File[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // --- LOGIC MỚI: TÁCH HÀM FETCH RA RIÊNG ---
     const fetchPortfolio = useCallback(async () => {
         setLoading(true);
         const { data, error } = await supabase
@@ -37,9 +35,8 @@ export default function PortfolioManager({ userId }: { userId: string }) {
             setItems(data || []);
         }
         setLoading(false);
-    }, [supabase, userId]); // Thêm dependencies
+    }, [supabase, userId]);
 
-    // useEffect chỉ gọi hàm fetch
     useEffect(() => {
         if (userId) {
             fetchPortfolio();
@@ -52,46 +49,65 @@ export default function PortfolioManager({ userId }: { userId: string }) {
 
     const handleUpload = async () => {
         if (files.length === 0) return toast.error('Vui lòng chọn file.');
+
+        console.log("--- BẮT ĐẦU DEBUG UPLOAD ---");
         setUploading(true);
-        const toastId = toast.loading(`Đang xử lý ${files.length} file...`);
+        const toastId = toast.loading(`Đang upload ${files.length} file...`);
 
         try {
-            // --- LOGIC MỚI: XỬ LÝ UPLOAD RÕ RÀNG HƠN ---
             const uploadTasks = files.map(async (file) => {
-                const options = { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true };
-                const compressedFile = await imageCompression(file, options);
-                const filePath = `${userId}/${Date.now()}-${compressedFile.name}`;
-                const { error } = await supabase.storage.from('portfolios').upload(filePath, compressedFile);
-                if (error) throw new Error(`Lỗi upload file ${file.name}: ${error.message}`);
-                const { data } = supabase.storage.from('portfolios').getPublicUrl(filePath);
-                return { talent_id: userId, file_url: data.publicUrl, type: 'image' };
+                const filePath = `${userId}/${Date.now()}-${file.name}`;
+
+                console.log(`[${file.name}] Bắt đầu upload lên Storage...`);
+                const { error: uploadError } = await supabase.storage
+                    .from('portfolios')
+                    .upload(filePath, file);
+                console.log(`[${file.name}] Upload lên Storage hoàn tất.`);
+
+                if (uploadError) {
+                    throw new Error(`Lỗi upload file ${file.name}: ${uploadError.message}`);
+                }
+
+                console.log(`[${file.name}] Đang lấy public URL...`);
+                const { data: urlData } = supabase.storage
+                    .from('portfolios')
+                    .getPublicUrl(filePath);
+                console.log(`[${file.name}] Lấy public URL thành công:`, urlData.publicUrl);
+
+                return { talent_id: userId, file_url: urlData.publicUrl, type: 'image' };
             });
 
+            console.log("Đang chờ tất cả các file upload xong (Promise.all)...");
             const uploadedFilesData = await Promise.all(uploadTasks);
+            console.log("Tất cả file đã upload xong! Bắt đầu insert vào CSDL...");
 
-            const { error: dbError } = await supabase.from('portfolios').insert(uploadedFilesData);
+            const { error: dbError } = await supabase
+                .from('portfolios')
+                .insert(uploadedFilesData);
+
+            console.log("Insert vào CSDL hoàn tất.");
             if (dbError) throw dbError;
 
-            // ----- SỬA LỖI QUAN TRỌNG NHẤT Ở ĐÂY -----
             toast.success('Upload thành công!', { id: toastId });
             setFiles([]);
             if (fileInputRef.current) fileInputRef.current.value = "";
 
-            // Sau khi mọi thứ thành công, gọi lại hàm fetch để lấy danh sách mới nhất
-            // Điều này đảm bảo giao diện được cập nhật đúng
+            console.log("Bắt đầu fetch lại portfolio...");
             await fetchPortfolio();
+            console.log("Fetch lại portfolio thành công.");
 
         } catch (error) {
+            console.error("LỖI BỊ BẮT TRONG KHỐI CATCH:", error);
             if (error instanceof Error) {
                 toast.error(error.message, { id: toastId });
             }
         } finally {
-            // Đảm bảo setUploading(false) luôn được gọi
+            console.log("--- KẾT THÚC DEBUG UPLOAD (Khối finally được thực thi) ---");
             setUploading(false);
         }
     };
 
-    // ... (hàm handleDelete và JSX giữ nguyên)
+    // THÊM LẠI HÀM `handleDelete` ĐÃ BỊ THIẾU
     const handleDelete = async (item: PortfolioItem) => {
         if (!item.file_url) return;
         if (!window.confirm('Bạn có chắc muốn xóa ảnh này?')) return;
@@ -105,7 +121,7 @@ export default function PortfolioManager({ userId }: { userId: string }) {
 
         setItems(current => current.filter(i => i.id !== item.id));
         toast.success('Đã xóa thành công!');
-        router.refresh(); // Refresh sau khi xóa
+        router.refresh();
     };
 
     return (
