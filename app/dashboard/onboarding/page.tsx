@@ -37,8 +37,7 @@ export default function OnboardingPage() {
         } else {
             toast.success('Cập nhật vai trò thành công! Đang chuyển hướng...');
             // Chuyển hướng đến dashboard chính sau khi chọn xong
-            router.push('/dashboard/profile');
-            router.refresh();
+            window.location.href = '/dashboard/profile';
         }
         setLoading(false);
     };

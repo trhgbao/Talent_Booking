@@ -30,19 +30,18 @@ export async function middleware(request: NextRequest) {
 
     // Logic chuyển hướng mới
     if (user && request.nextUrl.pathname.startsWith('/dashboard')) {
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
+        const { data: profile } = await supabase.from('profiles').select('role, full_name').eq('id', user.id).single();
 
-        // Nếu đã đăng nhập, vào dashboard nhưng chưa có role -> chuyển đến trang chọn role
+        // Chưa có role -> đến trang onboarding
         if (!profile?.role && request.nextUrl.pathname !== '/dashboard/onboarding') {
             return NextResponse.redirect(new URL('/dashboard/onboarding', request.url));
         }
-        // Nếu đã có role mà lại vào trang chọn role -> chuyển về dashboard chính
-        if (profile?.role && request.nextUrl.pathname === '/dashboard/onboarding') {
-            return NextResponse.redirect(new URL('/dashboard/profile', request.url));
+
+        // Đã có role nhưng chưa điền tên -> bắt ở lại trang profile
+        if (profile?.role && !profile.full_name && request.nextUrl.pathname !== '/dashboard/profile') {
+            const redirectUrl = new URL('/dashboard/profile', request.url);
+            redirectUrl.searchParams.set('welcome', 'true'); // Thêm param để hiển thị thông báo
+            return NextResponse.redirect(redirectUrl);
         }
     }
 

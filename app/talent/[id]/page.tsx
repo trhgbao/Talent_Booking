@@ -1,10 +1,9 @@
-﻿// /app/talent/[id]/page.tsx - PHIÊN BẢN HOÀN CHỈNH
+﻿// /app/talent/[id]/page.tsx - PHIÊN BẢN SỬA LỖI VÀ HOÀN CHỈNH
 
 import { createClient } from '@/lib/supabase/server';
 import Image from 'next/image';
 import BookingTrigger from '@/components/BookingTrigger';
 
-// Định nghĩa các kiểu dữ liệu cho trang này
 type Props = {
     params: { id: string };
 };
@@ -19,35 +18,45 @@ export default async function TalentDetailPage({ params }: Props) {
     const supabase = createClient();
     const talentId = params.id;
 
-    // Lấy user (nếu đã đăng nhập)
+    // 1. Lấy thông tin người dùng đang đăng nhập (nếu có)
     const { data: { user } } = await supabase.auth.getUser();
 
-    // Lấy thông tin chi tiết của talent
+    // 2. Lấy profile của người dùng đang đăng nhập để kiểm tra quyền
+    let currentUserProfile = null;
+    if (user) {
+        const { data } = await supabase.from('profiles').select('role, full_name').eq('id', user.id).single();
+        currentUserProfile = data;
+    }
+
+    // 3. Định nghĩa các điều kiện rõ ràng
+    const isClient = currentUserProfile?.role === 'client';
+    const isProfileComplete = !!currentUserProfile?.full_name; // Dấu !! để chuyển thành boolean
+    const canBook = user && isClient && isProfileComplete;
+
+    // 4. Lấy thông tin của talent đang được xem
     const { data: talentProfile, error: profileError } = await supabase
         .from('profiles')
-        .select('*') // Lấy tất cả các cột cho đơn giản
+        .select('*')
         .eq('id', talentId)
         .single();
 
-    // Lấy danh sách portfolio của talent
     const { data: portfolioItems, error: portfolioError } = await supabase
         .from('portfolios')
         .select('*')
         .eq('talent_id', talentId);
 
-    // Xử lý trường hợp có lỗi hoặc không tìm thấy talent
     if (profileError || !talentProfile) {
         console.error("Lỗi lấy thông tin talent:", profileError);
         return <p className="p-8">Không thể tìm thấy thông tin talent.</p>;
     }
 
-    // Từ đây trở đi, TypeScript hiểu rằng `talentProfile` chắc chắn tồn tại
-    // và là một đối tượng chứa tất cả các cột từ bảng `profiles`.
+    // --- Bắt đầu phần Render ---
     return (
         <div className="container mx-auto px-4 py-12">
             <div className="flex flex-col md:flex-row gap-8 md:gap-12">
                 <aside className="w-full md:w-1/3 lg:w-1/4">
                     <div className="sticky top-8">
+                        {/* ... (Phần hiển thị avatar, tên, chiều cao... giữ nguyên) ... */}
                         <div className="relative w-48 h-48 mx-auto md:w-full md:h-auto md:aspect-square mb-6">
                             <Image
                                 src={talentProfile.avatar_url || '/default-avatar.png'}
@@ -58,20 +67,31 @@ export default async function TalentDetailPage({ params }: Props) {
                         </div>
                         <h1 className="text-3xl font-bold text-center md:text-left">{talentProfile.full_name}</h1>
                         <p className="text-center md:text-left text-gray-600 mb-4">Người mẫu & Diễn viên</p>
-
                         <div className="space-y-2 text-gray-700 mb-6">
                             <p><strong>Chiều cao:</strong> {talentProfile.height || 'N/A'} cm</p>
                             <p><strong>Thành phố:</strong> {talentProfile.city || 'N/A'}</p>
                         </div>
 
-                        <BookingTrigger
-                            talentId={talentProfile.id}
-                            talentName={talentProfile.full_name || 'Không có tên'}
-                            currentUser={user}
-                        />
+                        {/* --- LOGIC HIỂN THỊ NÚT BOOKING ĐÃ SỬA LẠI --- */}
+                        {canBook ? (
+                            // Nếu đủ điều kiện, hiển thị nút Booking
+                            <BookingTrigger
+                                talentId={talentProfile.id}
+                                talentName={talentProfile.full_name}
+                                currentUser={user}
+                            />
+                        ) : (
+                            // Nếu không đủ điều kiện, hiển thị thông báo tương ứng
+                            <div className="mt-6 p-3 bg-gray-100 rounded-md text-center text-sm text-gray-600">
+                                {!user && 'Vui lòng đăng nhập để booking.'}
+                                {user && !isClient && 'Chỉ tài khoản Doanh nghiệp mới có thể booking.'}
+                                {user && isClient && !isProfileComplete && 'Vui lòng hoàn tất hồ sơ của bạn để bắt đầu booking.'}
+                            </div>
+                        )}
                     </div>
                 </aside>
                 <main className="w-full md:w-2/3 lg:w-3/4">
+                    {/* ... (Phần hiển thị Giới thiệu và Portfolio giữ nguyên) ... */}
                     <section className="mb-12">
                         <h2 className="text-2xl font-bold border-b pb-2 mb-4">Giới thiệu</h2>
                         <p className="text-gray-700 leading-relaxed">

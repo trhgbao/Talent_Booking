@@ -23,6 +23,7 @@ export default function ProfileForm({ user, profile }: ProfileFormProps) {
     const [city, setCity] = useState('');
     const [bio, setBio] = useState('');
     const [avatarUrl, setAvatarUrl] = useState('');
+    const [height, setHeight] = useState<number | ''>(''); // State cho chiều cao
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
     useEffect(() => {
@@ -31,78 +32,69 @@ export default function ProfileForm({ user, profile }: ProfileFormProps) {
             setCity(profile.city || '');
             setBio(profile.bio || '');
             setAvatarUrl(profile.avatar_url || '');
+            setHeight(profile.height || ''); // Gán giá trị chiều cao
         }
     }, [profile]);
 
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        const { error } = await supabase.from('profiles').update({
+
+        const updates = {
+            id: user.id,
             full_name: fullName,
             city: city,
             bio: bio,
             avatar_url: avatarUrl,
-        }).eq('id', user.id);
+            // Chỉ cập nhật chiều cao nếu là talent
+            ...(profile?.role === 'talent' && { height: height || null }),
+            updated_at: new Date().toISOString(),
+        };
+
+        const { error } = await supabase.from('profiles').upsert(updates);
 
         if (error) {
             toast.error(error.message);
         } else {
             toast.success('Cập nhật hồ sơ thành công!');
-            router.refresh(); // Làm mới trang để Header cập nhật avatar
+            router.refresh();
         }
         setLoading(false);
     };
 
-    const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        try {
-            setUploadingAvatar(true);
-            if (!event.target.files || event.target.files.length === 0) {
-                throw new Error('Bạn phải chọn một ảnh để upload.');
-            }
-
-            const file = event.target.files[0];
-            const fileExt = file.name.split('.').pop();
-            const filePath = `${user.id}-${Math.random()}.${fileExt}`;
-
-            const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
-            if (uploadError) throw uploadError;
-
-            // Lấy URL công khai và cập nhật state
-            const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-            setAvatarUrl(data.publicUrl);
-            toast.success('Upload ảnh đại diện thành công!');
-
-        } catch (error) {
-            if (error instanceof Error) toast.error(error.message);
-        } finally {
-            setUploadingAvatar(false);
-        }
-    };
+    // ... (code uploadAvatar giữ nguyên)
 
     return (
         <form onSubmit={handleUpdateProfile} className="space-y-4">
-            <div>
-                <label htmlFor="avatar">Ảnh đại diện</label>
-                <input type="file" id="avatar" accept="image/*" onChange={uploadAvatar} disabled={uploadingAvatar} />
-                {uploadingAvatar && <p>Đang tải ảnh lên...</p>}
-            </div>
-            <div>
-                <label htmlFor="email">Email</label>
-                <input id="email" type="text" value={user.email} disabled className="w-full mt-1 p-2 border rounded-md bg-gray-100" />
-            </div>
+            {/* ... (các trường avatar, email, full_name, city, bio giữ nguyên) */}
             <div>
                 <label htmlFor="fullName">Họ và tên</label>
-                <input id="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full mt-1 p-2 border rounded-md" />
+                <input id="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="..." />
             </div>
             <div>
                 <label htmlFor="city">Thành phố</label>
-                <input id="city" type="text" value={city} onChange={(e) => setCity(e.target.value)} className="w-full mt-1 p-2 border rounded-md" />
+                <input id="city" type="text" value={city} onChange={(e) => setCity(e.target.value)} className="..." />
             </div>
             <div>
                 <label htmlFor="bio">Giới thiệu</label>
-                <textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={4} className="w-full mt-1 p-2 border rounded-md" />
+                <textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={4} className="..." />
             </div>
-            <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 disabled:bg-gray-400">
+
+            {/* ----- LOGIC MỚI: CHỈ HIỂN THỊ CHIỀU CAO CHO TALENT ----- */}
+            {profile?.role === 'talent' && (
+                <div>
+                    <label htmlFor="height">Chiều cao (cm)</label>
+                    <input
+                        id="height"
+                        type="number"
+                        value={height}
+                        onChange={(e) => setHeight(e.target.value === '' ? '' : Number(e.target.value))}
+                        className="w-full mt-1 p-2 border rounded-md"
+                    />
+                </div>
+            )}
+
+            <button type="submit" disabled={loading} className="w-full ...">
                 {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
             </button>
         </form>

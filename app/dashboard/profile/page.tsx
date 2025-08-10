@@ -3,12 +3,10 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import ProfileForm from '@/components/ProfileForm';
-import ImageUploader from '@/components/ImageUploader';
 import RoleSelector from '@/components/RoleSelector';
-import { Database } from 'types/types_db'; // Bước 1: Import kiểu Database
+import PortfolioManager from '@/components/PortfolioManager'; // Import component quản lý portfolio
+import { Database } from 'types/types_db';
 
-// Bước 2: Tạo một kiểu tiện ích từ Database
-// Nó sẽ tự động lấy ra kiểu của một dòng trong bảng 'profiles'
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
 export default async function ProfilePage() {
@@ -19,41 +17,47 @@ export default async function ProfilePage() {
         redirect('/auth');
     }
 
-    // Bước 3: Sử dụng .returns<Profile | null>() để "dạy" TypeScript
     const { data: profile } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        //.returns<Profile | null>() // <-- Thêm dòng này
         .single();
 
-    // Nếu không có profile hoặc profile chưa có role, hiển thị trang chọn vai trò
+    // 1. Nếu chưa có role, bắt buộc chọn role
     if (!profile || !profile.role) {
         return <RoleSelector userId={user.id} />;
     }
 
-    // Nếu đã có vai trò, hiển thị dashboard tương ứng
+    // 2. Nếu đã có role, hiển thị dashboard
     return (
         <div className="container mx-auto p-8">
-            <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
-            {profile.role === 'talent' ? (
-                // --- Giao diện cho TALENT ---
+            <h1 className="text-3xl font-bold mb-8">Hồ sơ của bạn</h1>
+
+            {profile.role === 'talent' && (
+                // --- GIAO DIỆN CHO TALENT ---
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div className="md:col-span-1">
                         <h2 className="text-xl font-semibold mb-4">Thông tin cá nhân</h2>
-                        {/* Bây giờ prop 'profile' sẽ có kiểu dữ liệu đúng */}
                         <ProfileForm user={user} profile={profile} />
                     </div>
                     <div className="md:col-span-2">
-                        {/* Phần quản lý portfolio ở đây */}
-                        {/* <PortfolioManager userId={user.id} /> */}
+                        <h2 className="text-xl font-semibold mb-4">Quản lý Portfolio</h2>
+                        <p className="text-sm text-gray-500 mb-4">Tải lên các hình ảnh và video đẹp nhất của bạn để thu hút nhà tuyển dụng.</p>
+                        <PortfolioManager userId={user.id} />
                     </div>
                 </div>
-            ) : (
-                // --- Giao diện cho CLIENT ---
-                <div>
-                    <h2 className="text-xl font-semibold">Chào mừng Doanh nghiệp!</h2>
-                    <p>Các tính năng dành cho bạn đang được phát triển.</p>
+            )}
+
+            {profile.role === 'client' && (
+                // --- GIAO DIỆN CHO CLIENT ---
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="md:col-span-1">
+                        <h2 className="text-xl font-semibold mb-4">Thông tin Doanh nghiệp</h2>
+                        <ProfileForm user={user} profile={profile} />
+                    </div>
+                    <div className="md:col-span-2">
+                        <h2 className="text-xl font-semibold mb-4">Quản lý Portfolio</h2>
+                        <PortfolioManager userId={user.id} />                    </div>
                 </div>
             )}
         </div>
