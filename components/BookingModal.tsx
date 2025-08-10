@@ -1,17 +1,18 @@
-﻿// components/BookingModal.tsx
+﻿// /components/BookingModal.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom'; // Import createPortal
 import { createClient } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
+import toast from 'react-hot-toast'; // Dùng toast thay cho alert
 
-// Định nghĩa các props mà component này sẽ nhận
 interface BookingModalProps {
     isOpen: boolean;
-    onClose: () => void; // Hàm để đóng modal
-    talentId: string;    // ID của talent được book
-    talentName: string;  // Tên của talent để hiển thị
-    currentUser: User | null; // User đang đăng nhập
+    onClose: () => void;
+    talentId: string;
+    talentName: string;
+    currentUser: User; // currentUser không nên là null ở đây
 }
 
 export default function BookingModal({ isOpen, onClose, talentId, talentName, currentUser }: BookingModalProps) {
@@ -19,22 +20,21 @@ export default function BookingModal({ isOpen, onClose, talentId, talentName, cu
     const [notes, setNotes] = useState('');
     const [bookingDate, setBookingDate] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [isBrowser, setIsBrowser] = useState(false);
+
+    // useEffect để xác định component đang chạy ở phía client
+    useEffect(() => {
+        setIsBrowser(true);
+    }, []);
 
     const handleSendBooking = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError(null);
-
-        if (!currentUser) {
-            setError('Bạn cần phải đăng nhập để thực hiện chức năng này.');
-            return;
-        }
         if (!bookingDate) {
-            setError('Vui lòng chọn ngày booking.');
-            return;
+            return toast.error('Vui lòng chọn ngày booking.');
         }
 
         setIsLoading(true);
+        const toastId = toast.loading('Đang gửi yêu cầu...');
 
         try {
             const { error: insertError } = await supabase.from('bookings').insert({
@@ -42,40 +42,36 @@ export default function BookingModal({ isOpen, onClose, talentId, talentName, cu
                 client_id: currentUser.id,
                 start_date: bookingDate,
                 notes: notes,
-                status: 'pending', // Trạng thái ban đầu luôn là 'pending'
+                status: 'pending',
             });
 
             if (insertError) {
                 throw insertError;
             }
 
-            alert(`Đã gửi yêu cầu booking thành công tới ${talentName}!`);
-            onClose(); // Đóng modal sau khi gửi thành công
-            setNotes(''); // Reset form
+            toast.success(`Đã gửi yêu cầu booking thành công tới ${talentName}!`, { id: toastId });
+            onClose();
+            setNotes('');
             setBookingDate('');
         } catch (err) {
-            // Kiểm tra và ép kiểu `err` thành một đối tượng Error
             if (err instanceof Error) {
-                setError('Đã xảy ra lỗi: ' + err.message);
+                toast.error(`Đã xảy ra lỗi: ${err.message}`, { id: toastId });
             } else {
-                setError('Đã xảy ra một lỗi không xác định.');
+                toast.error('Đã xảy ra một lỗi không xác định.', { id: toastId });
             }
         } finally {
             setIsLoading(false);
         }
     };
 
-    if (!isOpen) return null; // Nếu không mở thì không render gì cả
-
-    return (
-        // Lớp phủ nền
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-            {/* Hộp thoại Modal */}
-            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+    // Tạo nội dung của modal
+    const modalContent = isOpen ? (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md text-gray-800">
                 <h2 className="text-2xl font-bold mb-4">Booking: {talentName}</h2>
                 <form onSubmit={handleSendBooking}>
                     <div className="mb-4">
-                        <label htmlFor="bookingDate" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="bookingDate" className="block text-sm font-medium mb-1">
                             Ngày mong muốn
                         </label>
                         <input
@@ -83,34 +79,43 @@ export default function BookingModal({ isOpen, onClose, talentId, talentName, cu
                             type="date"
                             value={bookingDate}
                             onChange={(e) => setBookingDate(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
                             required
                         />
                     </div>
                     <div className="mb-4">
-                        <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
-                            Ghi chú cho Talent (yêu cầu, mô tả công việc...)
+                        <label htmlFor="notes" className="block text-sm font-medium mb-1">
+                            Ghi chú cho Talent
                         </label>
                         <textarea
                             id="notes"
                             rows={4}
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Ví dụ: Cần chụp lookbook cho bộ sưu tập hè, thời gian từ 9h-17h..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                            placeholder="Mô tả công việc, thời gian, địa điểm..."
                         />
                     </div>
-                    {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-                    <div className="flex justify-end gap-4">
-                        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md">
+                    <div className="flex justify-end gap-4 mt-6">
+                        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">
                             Hủy
                         </button>
-                        <button type="submit" disabled={isLoading} className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:bg-gray-400">
+                        <button type="submit" disabled={isLoading} className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:bg-gray-400 hover:bg-blue-700">
                             {isLoading ? 'Đang gửi...' : 'Gửi yêu cầu'}
                         </button>
                     </div>
                 </form>
             </div>
         </div>
-    );
+    ) : null;
+
+    // Sử dụng Portal để render modal
+    if (isBrowser) {
+        return createPortal(
+            modalContent,
+            document.body
+        );
+    } else {
+        return null;
+    }
 }

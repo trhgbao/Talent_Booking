@@ -6,6 +6,7 @@ import ProfileForm from '@/components/ProfileForm';
 import RoleSelector from '@/components/RoleSelector';
 import PortfolioManager from '@/components/PortfolioManager'; // Import component quản lý portfolio
 import { Database } from 'types/types_db';
+import Link from 'next/link';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -45,6 +46,13 @@ export default async function ProfilePage() {
                         <p className="text-sm text-gray-500 mb-4">Tải lên các hình ảnh và video đẹp nhất của bạn để thu hút nhà tuyển dụng.</p>
                         <PortfolioManager userId={user.id} />
                     </div>
+                    <div>
+                        <h2 className="text-xl font-semibold mb-4">Quản lý Booking</h2>
+                        <p className="text-sm text-gray-500 mb-4">Xem và phản hồi các yêu cầu booking từ khách hàng.</p>
+                        <Link href="/dashboard/bookings" className="inline-block bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">
+                            Xem Yêu cầu Booking
+                        </Link>
+                    </div>
                 </div>
             )}
 
@@ -57,7 +65,15 @@ export default async function ProfilePage() {
                     </div>
                     <div className="md:col-span-2">
                         <h2 className="text-xl font-semibold mb-4">Quản lý Portfolio</h2>
-                        <PortfolioManager userId={user.id} />                    </div>
+                        <PortfolioManager userId={user.id} />
+                    </div>
+                    <div className="md:col-span-3">
+                        <h2 className="text-xl font-semibold mb-4">Quản lý Booking</h2>
+                        <p className="text-sm text-gray-500 mb-4">Xem lại lịch sử và trạng thái các yêu cầu booking bạn đã gửi.</p>
+                        <Link href="/dashboard/my-bookings" className="inline-block bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">
+                            Xem Booking của tôi
+                        </Link>
+                    </div>
                 </div>
             )}
         </div>
