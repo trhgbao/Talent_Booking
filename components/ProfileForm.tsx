@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';
-import { Database } from '@/types_db';
+import { Database } from 'types/types_db';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import imageCompression from 'browser-image-compression';
