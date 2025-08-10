@@ -1,12 +1,10 @@
-// /app/auth/page.tsx
-'use client';
-import { Auth } from '@supabase/auth-ui-react';
-import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { createClient } from '@/lib/supabase/client';
+'use client'
+import { createClient } from '@/lib/supabase/client'
+import { Auth } from '@supabase/auth-ui-react'
+import { ThemeSupa } from '@supabase/auth-ui-shared'
 
-export default function AuthPage() {
-    const supabase = createClient();
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
+export default function LoginPage() {
+    const supabase = createClient()
 
     return (
         <div style={{ width: '100%', maxWidth: '420px', margin: 'auto', paddingTop: '100px' }}>
@@ -14,9 +12,8 @@ export default function AuthPage() {
                 supabaseClient={supabase}
                 appearance={{ theme: ThemeSupa }}
                 providers={['google']}
-                redirectTo={`${siteUrl}/auth/callback`}
-            // XÓA DÒNG NÀY ĐI: emailRedirectTo={`${siteUrl}/dashboard/profile`}
+                redirectTo={typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : ''}
             />
         </div>
-    );
+    )
 }
