@@ -40,8 +40,9 @@ export async function middleware(request: NextRequest) {
     return response
 }
 
+// Đổi tên hàm đã export thành `middleware`
 export const config = {
     matcher: [
-        '/((?!_next/static|_next/image|favicon.ico).*)',
+        '/((?!_next/static|_next/image|favicon.ico|auth).*)',
     ],
 }
