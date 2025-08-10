@@ -66,7 +66,7 @@ export default async function TalentDetailPage({ params }: Props) {
 
                         <BookingTrigger
                             talentId={talentProfile.id}
-                            talentName={talentProfile.full_name}
+                            talentName={talentProfile.full_name || 'Không có tên'}
                             currentUser={user}
                         />
                     </div>
