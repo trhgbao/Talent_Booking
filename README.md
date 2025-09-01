@@ -1,5 +1,25 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+**Project: TalentBook - An Airbnb-style Talent Booking Platform**
+
+TalentBook is a full-stack web application developed to modernize and simplify the talent booking industry. It serves as a two-sided marketplace connecting talent (models, actors, etc.) with clients (businesses, agencies).
+
+**Core Functionality:**
+
+*   **For Clients/Agencies:**
+    *   **Advanced Search & Filtering:** Discover talent based on specific criteria such as role, physical attributes (height, etc.), location, and availability.
+    *   **Detailed Portfolios:** View comprehensive talent profiles featuring high-quality photo galleries, video showreels, and work experience.
+    *   **Seamless Booking System:** Send booking requests, manage confirmed jobs, and communicate directly with talent.
+    *   **Review & Rating System:** Build a trusted community by leaving reviews for talent after a project is completed.
+
+*   **For Talent:**
+    *   **Dynamic Portfolio Creation:** Easily create and manage a professional portfolio by uploading images and videos.
+    *   **Profile Management:** Update personal information, physical stats, skills, and availability calendar.
+    *   **Booking Management:** Receive, accept, or decline booking requests directly through a personal dashboard.
+    *   **Real-time Chat:** Communicate with clients securely once a booking is confirmed to discuss project details.
+
+**Technology Stack:** Built with Next.js and powered by Supabase for database management, authentication, and real-time features.
+
 ## Getting Started
 
 First, run the development server:
